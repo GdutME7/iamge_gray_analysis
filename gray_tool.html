@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图像灰度分析工具 - 修复版</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+            gap: 25px;
+        }
+
+        .left-panel {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .right-panel {
+            flex: 1;
+            min-width: 400px;
+            background-color: #f9fafc;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .control-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f2f5;
+            font-weight: 600;
+        }
+
+        .upload-area {
+            border: 2px dashed #6a11cb;
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            background-color: #f9f6ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            background-color: #f0ebff;
+            transform: translateY(-2px);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #6a11cb;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        .image-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #f0f2f5;
+            border: 2px solid #e1e5eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #imageCanvas {
+            max-width: 100%;
+            max-height: 100%;
+            cursor: crosshair;
+            display: block;
+        }
+
+        .image-placeholder {
+            color: #aaa;
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .point-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #d1d9e6;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #6a11cb;
+            box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .primary-btn {
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: white;
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.3);
+        }
+
+        .secondary-btn {
+            background-color: #f0f2f5;
+            color: #555;
+        }
+
+        .secondary-btn:hover {
+            background-color: #e1e5eb;
+        }
+
+        .warning-btn {
+            background-color: #ff6b6b;
+            color: white;
+        }
+
+        .warning-btn:hover {
+            background-color: #ff5252;
+        }
+
+        .results-section {
+            margin-top: 25px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stats-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .stat-box {
+            flex: 1;
+            min-width: 150px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #6a11cb;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #777;
+        }
+
+        .points-table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #444;
+            border-bottom: 2px solid #eaeaea;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .point-id {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .point-coords {
+            color: #666;
+            font-family: monospace;
+        }
+
+        .point-gray {
+            font-weight: 600;
+        }
+
+        .point-diff {
+            font-weight: 600;
+        }
+
+        .in-range {
+            color: #27ae60;
+        }
+
+        .out-of-range {
+            color: #e74c3c;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+            margin-top: 20px;
+        }
+
+        .debug-info {
+            font-size: 0.85rem;
+            color: #666;
+            background-color: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+
+        @media (max-width: 1100px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .left-panel, .right-panel {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .point-controls {
+                flex-direction: column;
+            }
+
+            .stat-box {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>图像灰度分析工具 - 修复版</h1>
+            <p class="subtitle">修复了点击位置和灰度计算问题，现在可以准确选择点并计算灰度值</p>
+        </header>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="control-section">
+                    <h2 class="section-title">1. 上传图像</h2>
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">点击选择图像文件或拖放图像到此处</div>
+                        <div class="upload-hint">支持 JPG, PNG, BMP, GIF 格式</div>
+                        <input type="file" id="imageInput" accept="image/*">
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h2 class="section-title">2. 选择分析点</h2>
+                    <div class="image-container">
+                        <canvas id="imageCanvas"></canvas>
+                        <div id="imagePlaceholder" class="image-placeholder">
+                            请上传图像以开始分析
+                        </div>
+                    </div>
+
+                    <div class="debug-info" id="debugInfo">
+                        画布尺寸: 0×0 | 图像原始尺寸: 0×0 | 缩放比例: 1.00
+                    </div>
+
+                    <div class="point-controls">
+                        <div class="control-group">
+                            <label for="sampleRadius">采样半径 (像素)</label>
+                            <input type="number" id="sampleRadius" min="0" max="10" value="0">
+                            <div style="font-size: 0.85rem; color: #777; margin-top: 5px;">0表示只采样单个像素，大于0表示采样周围区域</div>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="threshold">浮动阈值 (%)</label>
+                            <input type="number" id="threshold" min="1" max="100" value="10">
+                            <div style="font-size: 0.85rem; color: #777; margin-top: 5px;">设置灰度值浮动差异的阈值</div>
+                        </div>
+                    </div>
+
+                    <div class="buttons">
+                        <button id="clearPoints" class="secondary-btn">清除所有点</button>
+                        <button id="calculateBtn" class="primary-btn">计算灰度值</button>
+                        <button id="exampleBtn" class="secondary-btn">加载示例图像</button>
+                        <button id="testBtn" class="secondary-btn">测试灰度计算</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="control-section">
+                    <h2 class="section-title">3. 分析结果</h2>
+
+                    <div class="results-header">
+                        <h3>灰度分析统计</h3>
+                        <div id="pointsCount">已选择点: 0</div>
+                    </div>
+
+                    <div class="stats-summary">
+                        <div class="stat-box">
+                            <div class="stat-value" id="avgGrayValue">0</div>
+                            <div class="stat-label">平均灰度值</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="maxDiffValue">0%</div>
+                            <div class="stat-label">最大浮动差异</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="inRangeValue">0</div>
+                            <div class="stat-label">在阈值范围内</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="outRangeValue">0</div>
+                            <div class="stat-label">超出阈值范围</div>
+                        </div>
+                    </div>
+
+                    <div class="points-table-container">
+                        <table id="pointsTable">
+                            <thead>
+                                <tr>
+                                    <th>点</th>
+                                    <th>坐标(原始)</th>
+                                    <th>坐标(显示)</th>
+                                    <th>灰度值</th>
+                                    <th>浮动差异</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pointsTableBody">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: #999; padding: 30px;">
+                                        尚未选择分析点，请在图像上点击选择点
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top: 25px; padding: 15px; background-color: #f0f7ff; border-radius: 6px;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">使用说明</h4>
+                        <ol style="color: #555; padding-left: 20px; line-height: 1.8;">
+                            <li>上传图像或使用示例图像</li>
+                            <li><strong>注意：</strong>点击位置会自动映射到原始图像坐标</li>
+                            <li>在图像上点击选择要分析的点（可多选）</li>
+                            <li>调整采样半径和浮动阈值</li>
+                            <li>点击"计算灰度值"按钮进行分析</li>
+                            <li>查看每个点的灰度值、与平均值的差异以及是否在阈值范围内</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>图像灰度分析工具 - 修复版 &copy; 2023 | 修复了坐标映射和灰度计算问题</p>
+        </footer>
+    </div>
+
+    <script>
+        // 全局变量
+        let image = null;
+        let canvas = null;
+        let ctx = null;
+        let points = [];
+        let isImageLoaded = false;
+        let originalWidth = 0;
+        let originalHeight = 0;
+        let scaleX = 1;
+        let scaleY = 1;
+
+        // DOM元素
+        const imageInput = document.getElementById('imageInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const imageCanvas = document.getElementById('imageCanvas');
+        const imagePlaceholder = document.getElementById('imagePlaceholder');
+        const clearPointsBtn = document.getElementById('clearPoints');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const exampleBtn = document.getElementById('exampleBtn');
+        const testBtn = document.getElementById('testBtn');
+        const sampleRadiusInput = document.getElementById('sampleRadius');
+        const thresholdInput = document.getElementById('threshold');
+        const pointsCount = document.getElementById('pointsCount');
+        const avgGrayValue = document.getElementById('avgGrayValue');
+        const maxDiffValue = document.getElementById('maxDiffValue');
+        const inRangeValue = document.getElementById('inRangeValue');
+        const outRangeValue = document.getElementById('outRangeValue');
+        const pointsTableBody = document.getElementById('pointsTableBody');
+        const debugInfo = document.getElementById('debugInfo');
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            canvas = imageCanvas;
+            ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+            // 事件监听器
+            uploadArea.addEventListener('click', () => imageInput.click());
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('drop', handleDrop);
+            imageInput.addEventListener('change', handleImageUpload);
+            clearPointsBtn.addEventListener('click', clearPoints);
+            calculateBtn.addEventListener('click', calculateGrayValues);
+            exampleBtn.addEventListener('click', loadExampleImage);
+            testBtn.addEventListener('click', testGrayCalculation);
+            canvas.addEventListener('click', handleCanvasClick);
+
+            // 初始更新
+            updatePointsCount();
+        });
+
+        // 处理拖放
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.style.backgroundColor = '#f0ebff';
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.style.backgroundColor = '#f9f6ff';
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                loadImageFromFile(files[0]);
+            }
+        }
+
+        // 处理图像上传
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                loadImageFromFile(file);
+            }
+        }
+
+        // 从文件加载图像
+        function loadImageFromFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    setupCanvasWithImage(img);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 加载示例图像
+        function loadExampleImage() {
+            const img = new Image();
+            img.onload = function() {
+                setupCanvasWithImage(img);
+            };
+            img.crossOrigin = "anonymous";
+            // 使用一个简单的测试图像
+            img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwMDAwMDAiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIyNSUiIHN0b3AtY29sb3I9IiM0NDQ0NDQiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI1MCUiIHN0b3AtY29sb3I9IiM4ODg4ODgiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI3NSUiIHN0b3AtY29sb3I9IiNGRkZGRkYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDAwMDAwIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyYWQpIi8+Cjwvc3ZnPg==';
+        }
+
+        // 设置画布和图像
+        function setupCanvasWithImage(img) {
+            image = img;
+            isImageLoaded = true;
+            originalWidth = img.width;
+            originalHeight = img.height;
+
+            // 设置画布尺寸
+            const container = canvas.parentElement;
+            const maxWidth = container.clientWidth - 10;
+            const maxHeight = 400;
+
+            // 计算缩放比例，保持宽高比
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width = Math.floor(width * ratio);
+                height = Math.floor(height * ratio);
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // 计算缩放比例（用于坐标映射）
+            scaleX = originalWidth / width;
+            scaleY = originalHeight / height;
+
+            // 绘制图像
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // 隐藏占位符
+            imagePlaceholder.style.display = 'none';
+            canvas.style.display = 'block';
+
+            // 更新调试信息
+            updateDebugInfo();
+
+            // 清除之前的点
+            clearPoints();
+
+            // 在示例图像上添加一些测试点
+            if (img.src.includes('data:image/svg+xml')) {
+                // 等待图像完全渲染
+                setTimeout(() => {
+                    // 添加一些已知灰度值的测试点
+                    addPointToCanvas(width * 0.2, height * 0.5);  // 暗色区域
+                    addPointToCanvas(width * 0.5, height * 0.5);  // 中间灰度
+                    addPointToCanvas(width * 0.8, height * 0.5);  // 亮色区域
+                    updatePointsDisplay();
+                }, 100);
+            }
+        }
+
+        // 更新调试信息
+        function updateDebugInfo() {
+            if (image) {
+                debugInfo.textContent = `画布尺寸: ${canvas.width}×${canvas.height} | 图像原始尺寸: ${originalWidth}×${originalHeight} | 缩放比例: X=${scaleX.toFixed(2)}, Y=${scaleY.toFixed(2)}`;
+            }
+        }
+
+        // 处理画布点击
+        function handleCanvasClick(e) {
+            if (!isImageLoaded) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // 检查是否点击在现有点上
+            const clickedPointIndex = points.findIndex(point => {
+                // 使用显示坐标检查
+                const displayX = point.originalX / scaleX;
+                const displayY = point.originalY / scaleY;
+                const distance = Math.sqrt(Math.pow(displayX - x, 2) + Math.pow(displayY - y, 2));
+                return distance < 15; // 点击半径为15像素
+            });
+
+            if (clickedPointIndex !== -1) {
+                // 如果点击在现有点上，移除该点
+                points.splice(clickedPointIndex, 1);
+                updatePointsDisplay();
+                updatePointsCount();
+                return;
+            }
+
+            // 添加新点
+            addPointToCanvas(x, y);
+        }
+
+        // 在画布坐标上添加点
+        function addPointToCanvas(canvasX, canvasY) {
+            // 计算原始图像坐标
+            const originalX = Math.round(canvasX * scaleX);
+            const originalY = Math.round(canvasY * scaleY);
+
+            // 确保坐标在图像范围内
+            if (originalX < 0 || originalX >= originalWidth || originalY < 0 || originalY >= originalHeight) {
+                console.warn('点击位置超出图像范围');
+                return;
+            }
+
+            points.push({
+                canvasX: Math.round(canvasX),
+                canvasY: Math.round(canvasY),
+                originalX: originalX,
+                originalY: originalY,
+                grayValue: null,
+                diffPercent: null,
+                inRange: null
+            });
+
+            updatePointsDisplay();
+            updatePointsCount();
+        }
+
+        // 更新点显示
+        function updatePointsDisplay() {
+            if (!isImageLoaded) return;
+
+            // 清除画布并重新绘制图像
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+            // 绘制所有点
+            points.forEach((point, index) => {
+                // 使用显示坐标绘制
+                const displayX = point.canvasX;
+                const displayY = point.canvasY;
+
+                // 绘制点标记
+                ctx.beginPath();
+                ctx.arc(displayX, displayY, 10, 0, Math.PI * 2);
+                ctx.fillStyle = point.inRange === false ? '#ff6b6b' : '#6a11cb';
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = 'white';
+                ctx.stroke();
+
+                // 绘制点标签
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(displayX + 12, displayY - 25, 35, 22);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`${index + 1}`, displayX + 30, displayY - 14);
+
+                // 绘制坐标文本
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.font = '12px Arial';
+                ctx.fillText(`(${point.originalX},${point.originalY})`, displayX, displayY + 25);
+            });
+
+            updatePointsCount();
+        }
+
+        // 更新点数显示
+        function updatePointsCount() {
+            pointsCount.textContent = `已选择点: ${points.length}`;
+        }
+
+        // 清除所有点
+        function clearPoints() {
+            points = [];
+            updatePointsDisplay();
+            clearResults();
+        }
+
+        // 清除结果
+        function clearResults() {
+            pointsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #999; padding: 30px;">
+                        尚未选择分析点，请在图像上点击选择点
+                    </td>
+                </tr>
+            `;
+
+            avgGrayValue.textContent = '0';
+            maxDiffValue.textContent = '0%';
+            inRangeValue.textContent = '0';
+            outRangeValue.textContent = '0';
+        }
+
+        // 测试灰度计算
+        function testGrayCalculation() {
+            if (!isImageLoaded) {
+                alert('请先加载图像！');
+                return;
+            }
+
+            // 创建测试图像
+            const testCanvas = document.createElement('canvas');
+            testCanvas.width = 3;
+            testCanvas.height = 1;
+            const testCtx = testCanvas.getContext('2d');
+
+            // 绘制已知颜色的像素
+            const imageData = testCtx.createImageData(3, 1);
+
+            // 红色 (R=255, G=0, B=0)
+            imageData.data[0] = 255; // R
+            imageData.data[1] = 0;   // G
+            imageData.data[2] = 0;   // B
+            imageData.data[3] = 255; // A
+
+            // 绿色 (R=0, G=255, B=0)
+            imageData.data[4] = 0;   // R
+            imageData.data[5] = 255; // G
+            imageData.data[6] = 0;   // B
+            imageData.data[7] = 255; // A
+
+            // 蓝色 (R=0, G=0, B=255)
+            imageData.data[8] = 0;   // R
+            imageData.data[9] = 0;   // G
+            imageData.data[10] = 255; // B
+            imageData.data[11] = 255; // A
+
+            testCtx.putImageData(imageData, 0, 0);
+
+            // 计算灰度值
+            const gray1 = calculatePixelGray(0, 0, testCanvas, testCtx);
+            const gray2 = calculatePixelGray(1, 0, testCanvas, testCtx);
+            const gray3 = calculatePixelGray(2, 0, testCanvas, testCtx);
+
+            alert(`灰度计算测试：
+红色(255,0,0)的灰度值: ${gray1.toFixed(2)}
+绿色(0,255,0)的灰度值: ${gray2.toFixed(2)}
+蓝色(0,0,255)的灰度值: ${gray3.toFixed(2)}
+
+计算公式: Gray = 0.299*R + 0.587*G + 0.114*B`);
+        }
+
+        // 计算单个像素的灰度值
+        function calculatePixelGray(x, y, canvasElement, context) {
+            const imageData = context.getImageData(0, 0, canvasElement.width, canvasElement.height);
+            const data = imageData.data;
+
+            const index = (y * canvasElement.width + x) * 4;
+            const r = data[index];
+            const g = data[index + 1];
+            const b = data[index + 2];
+
+            // 标准灰度计算公式
+            return 0.299 * r + 0.587 * g + 0.114 * b;
+        }
+
+        // 计算灰度值
+        function calculateGrayValues() {
+            if (!isImageLoaded || points.length === 0) {
+                alert('请先上传图像并选择至少一个点！');
+                return;
+            }
+
+            const radius = parseInt(sampleRadiusInput.value);
+            const threshold = parseInt(thresholdInput.value);
+
+            // 创建原始尺寸的离屏canvas用于准确计算
+            const offscreenCanvas = document.createElement('canvas');
+            offscreenCanvas.width = originalWidth;
+            offscreenCanvas.height = originalHeight;
+            const offscreenCtx = offscreenCanvas.getContext('2d');
+            offscreenCtx.drawImage(image, 0, 0);
+
+            // 计算每个点的灰度值
+            points.forEach(point => {
+                point.grayValue = calculateAverageGray(
+                    point.originalX,
+                    point.originalY,
+                    radius,
+                    offscreenCanvas,
+                    offscreenCtx
+                );
+            });
+
+            // 计算平均灰度值
+            const avgGray = points.reduce((sum, point) => sum + point.grayValue, 0) / points.length;
+
+            // 计算每个点的浮动差异
+            let maxDiff = 0;
+            points.forEach(point => {
+                // 避免除以零
+                if (avgGray === 0) {
+                    point.diffPercent = 0;
+                } else {
+                    point.diffPercent = ((point.grayValue - avgGray) / avgGray * 100);
+                }
+                point.diffPercent = Math.round(point.diffPercent * 10) / 10;
+
+                // 检查是否在阈值范围内
+                point.inRange = Math.abs(point.diffPercent) <= threshold;
+
+                // 更新最大差异
+                if (Math.abs(point.diffPercent) > maxDiff) {
+                    maxDiff = Math.abs(point.diffPercent);
+                }
+            });
+
+            // 更新显示
+            updateResults(avgGray, maxDiff, threshold);
+        }
+
+        // 计算指定点周围区域的平均灰度
+        function calculateAverageGray(x, y, radius, canvasElement, context) {
+            // 获取图像数据
+            const imageData = context.getImageData(0, 0, canvasElement.width, canvasElement.height);
+            const data = imageData.data;
+
+            let totalGray = 0;
+            let count = 0;
+
+            // 如果半径为0，只计算单个像素
+            if (radius === 0) {
+                const gray = calculatePixelGray(x, y, canvasElement, context);
+                return Math.round(gray);
+            }
+
+            // 遍历采样区域
+            for (let dy = -radius; dy <= radius; dy++) {
+                for (let dx = -radius; dx <= radius; dx++) {
+                    const px = Math.round(x + dx);
+                    const py = Math.round(y + dy);
+
+                    // 确保点在图像范围内
+                    if (px >= 0 && px < canvasElement.width && py >= 0 && py < canvasElement.height) {
+                        const gray = calculatePixelGray(px, py, canvasElement, context);
+                        totalGray += gray;
+                        count++;
+                    }
+                }
+            }
+
+            // 返回平均灰度值
+            return Math.round(totalGray / count);
+        }
+
+        // 更新结果
+        function updateResults(avgGray, maxDiff, threshold) {
+            // 更新统计信息
+            avgGrayValue.textContent = Math.round(avgGray);
+            maxDiffValue.textContent = maxDiff.toFixed(1) + '%';
+
+            // 计算在阈值范围内和超出范围的点的数量
+            const inRangeCount = points.filter(point => point.inRange).length;
+            const outRangeCount = points.length - inRangeCount;
+
+            inRangeValue.textContent = inRangeCount;
+            outRangeValue.textContent = outRangeCount;
+
+            // 更新表格
+            updatePointsTable(threshold);
+
+            // 更新点显示（根据是否在阈值范围内改变颜色）
+            updatePointsDisplay();
+        }
+
+        // 更新点表格
+        function updatePointsTable(threshold) {
+            if (points.length === 0) {
+                pointsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #999; padding: 30px;">
+                            尚未选择分析点，请在图像上点击选择点
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let tableHTML = '';
+            points.forEach((point, index) => {
+                const diffClass = point.inRange ? 'in-range' : 'out-of-range';
+                const diffSign = point.diffPercent >= 0 ? '+' : '';
+                const statusText = point.inRange ? '在范围内' : '超出范围';
+                const statusClass = point.inRange ? 'in-range' : 'out-of-range';
+
+                tableHTML += `
+                    <tr>
+                        <td class="point-id">${index + 1}</td>
+                        <td class="point-coords">(${point.originalX}, ${point.originalY})</td>
+                        <td class="point-coords">(${point.canvasX}, ${point.canvasY})</td>
+                        <td class="point-gray">${point.grayValue}</td>
+                        <td class="point-diff ${diffClass}">${diffSign}${point.diffPercent}%</td>
+                        <td class="${statusClass}">${statusText}</td>
+                    </tr>
+                `;
+            });
+
+            pointsTableBody.innerHTML = tableHTML;
+        }
+    </script>
+</body>
+</html>
